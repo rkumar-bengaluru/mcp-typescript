@@ -83,7 +83,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 async function fetchPatientInfo<T>(barcode: string): Promise<T> {
     try {
-        const apiUrlAxios = 'http://localhost:8080/api/arogya/patients/';
+        const apiUrlAxios = process.env.BASE_ENDPOINT
         const authTokenAxios = process.env.API_TOKEN
         const response = await axios.get<T>(apiUrlAxios + barcode, {
             headers: {
