@@ -1,0 +1,8 @@
+{
+    "std-io-mcp-server": {
+        "command": "node",
+        "args": [
+            "C:/2025/mcp/typscript/stdio/server/build/index.js"
+        ]
+    }
+}
