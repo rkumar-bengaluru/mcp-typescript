@@ -12,7 +12,7 @@ export class MCPServer {
     server: Server
 
     // to support multiple simultaneous connections
-    transports: {[sessionId: string]: StreamableHTTPServerTransport} = {}
+    transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
 
     private toolInterval: NodeJS.Timeout | undefined
     private singleGreetToolName = "single-greet"
@@ -113,7 +113,7 @@ export class MCPServer {
                     type: "object",
                     properties: {
                         name: {
-                            type: "string" ,
+                            type: "string",
                             description: "name to greet"
                         },
                     },
@@ -129,7 +129,7 @@ export class MCPServer {
                     type: "object",
                     properties: {
                         name: {
-                            type: "string" ,
+                            type: "string",
                             description: "name to greet"
                         },
                     },
@@ -137,7 +137,7 @@ export class MCPServer {
                 }
             }
 
-             // tool that sends multiple greetings with notifications
+            // tool that sends multiple greetings with notifications
             const emailTool = {
                 name: this.emailToolName,
                 description: this.emailToolDescription,
@@ -157,13 +157,13 @@ export class MCPServer {
                             description: "content of the email"
                         }
                     },
-                    required: ["emailId","subject", "content"]
+                    required: ["emailId", "subject", "content"]
                 }
             }
 
 
             return {
-                tools: [singleGreetTool, multiGreetTool,emailTool]
+                tools: [singleGreetTool, multiGreetTool, emailTool]
             }
         })
 
@@ -206,11 +206,15 @@ export class MCPServer {
                 if (!name) {
                     throw new Error("Name to greet undefined.")
                 }
+                 let response = {
+                    "result": `Hey ${name}! Welcome to itsuki's world!`
+                }
+
 
                 return {
-                    content: [ {
+                    content: [{
                         type: "text",
-                        text: `Hey ${name}! Welcome to itsuki's world!`
+                        text: JSON.stringify(response)
                     }]
                 }
             }
@@ -232,23 +236,26 @@ export class MCPServer {
                 await sendNotification(notification);
 
                 await sleep(1000)
+                let response = {
+                    "result": "Hope you enjoy your day!"
+                }
 
                 return {
-                    content: [ {
+                    content: [{
                         type: "text",
-                        text: `Hope you enjoy your day!`
+                        text: JSON.stringify(response)
                     }]
                 }
             }
 
-             if (toolName === this.emailToolName) {
-                const { emailId , subject, content} = args
+            if (toolName === this.emailToolName) {
+                const { emailId, subject, content } = args
 
                 if (!emailId) {
                     throw new Error("Email ID to send the email to is undefined.")
                 }
                 let htmlContent = '<h2>' + content as string + '</h2>'
-                
+
                 // Simulate sending an email
                 console.log(`Sending email to ${emailId}...`)
                 sendEmail({
@@ -268,10 +275,15 @@ export class MCPServer {
                 }
                 await sendNotification(notification)
 
+                let response = {
+                    "result": "your request to send email has been processed",
+                    "emailId": emailId
+                }
+
                 return {
                     content: [{
                         type: "text",
-                        text: `Email sent to ${emailId}`
+                        text: JSON.stringify(response)
                     }]
                 }
             }
@@ -353,8 +365,8 @@ export class MCPServer {
         return {
             jsonrpc: '2.0',
             error: {
-              code: -32000,
-              message: message,
+                code: -32000,
+                message: message,
             },
             id: randomUUID(),
         }
@@ -366,7 +378,7 @@ export class MCPServer {
             return result.success
         }
         if (Array.isArray(body)) {
-          return body.some(request => isInitial(request))
+            return body.some(request => isInitial(request))
         }
         return isInitial(body)
     }
