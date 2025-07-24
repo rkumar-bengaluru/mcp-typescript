@@ -8,7 +8,7 @@ import axios from 'axios';
 
 // Create server instance
 const server = new Server({
-    name: "create-mcp-app",
+    name: "mcp-patient-info-server",
     version: "1.0.0"
 }, {
     capabilities: {

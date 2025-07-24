@@ -1,0 +1,9 @@
+{
+  "std-io-mcp-server": [
+    {
+      "name": "send-email-mcp-server",
+      "description": "A simple MCP server that sends emails.",
+      "url": "http://localhost:3000/mcp"
+    }
+  ]
+}
