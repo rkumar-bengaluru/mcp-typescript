@@ -13,17 +13,93 @@
       align-items: center;
       justify-content: center;
     }
+    
+    /* Chat Icon Styles */
+    .chat-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: #4f8cff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(79,140,255,0.3);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .chat-icon:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(79,140,255,0.4);
+    }
+    
+    .chat-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+    
+    .chat-icon .close-icon {
+      display: none;
+    }
+    
+    /* Chat Container Styles */
     .chat-container {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
       background: #fff;
       border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
       width: 370px;
-      max-width: 95vw;
+      max-width: calc(100vw - 40px);
       display: flex;
       flex-direction: column;
-      height: 540px;
+      height: 400px;
+      max-height: calc(100vh - 140px);
       overflow: hidden;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 999;
     }
+    
+    .chat-container.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    .chat-header {
+      background: #4f8cff;
+      color: white;
+      padding: 16px 20px;
+      font-weight: 600;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .chat-header .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
     #chat {
       flex: 1;
       padding: 20px 16px 10px 16px;
@@ -34,11 +110,13 @@
       flex-direction: column;
       gap: 10px;
     }
+    
     .message {
       display: flex;
       flex-direction: column;
       max-width: 80%;
     }
+    
     .user {
       align-self: flex-end;
       background: #4f8cff;
@@ -49,6 +127,7 @@
       word-break: break-word;
       box-shadow: 0 2px 8px rgba(79,140,255,0.08);
     }
+    
     .bot {
       align-self: flex-start;
       background: #e5e9f2;
@@ -59,6 +138,7 @@
       word-break: break-word;
       box-shadow: 0 2px 8px rgba(79,140,255,0.04);
     }
+    
     .input-area {
       display: flex;
       padding: 14px 16px;
@@ -66,6 +146,7 @@
       border-top: 1px solid #e0e4ea;
       gap: 8px;
     }
+    
     #input {
       flex: 1;
       padding: 10px 12px;
@@ -75,10 +156,12 @@
       outline: none;
       transition: border 0.2s;
     }
+    
     #input:focus {
       border: 1.5px solid #4f8cff;
     }
-    button {
+    
+    .send-btn {
       background: #4f8cff;
       color: #fff;
       border: none;
@@ -89,19 +172,84 @@
       transition: background 0.2s;
       box-shadow: 0 2px 8px rgba(79,140,255,0.08);
     }
-    button:hover {
+    
+    .send-btn:hover {
       background: #2563d8;
+    }
+    
+    /* Responsive */
+    @media (max-width: 480px) {
+      .chat-container {
+        width: calc(100vw - 40px);
+        height: 60vh;
+        max-height: calc(100vh - 120px);
+        bottom: 80px;
+      }
+      
+      .chat-icon {
+        bottom: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="chat-container">
+  <!-- Floating Chat Icon -->
+  <div class="chat-icon" onclick="toggleChat()">
+    <svg class="chat-icon-svg" viewBox="0 0 24 24">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+    </svg>
+    <svg class="close-icon" viewBox="0 0 24 24">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+  </div>
+
+  <!-- Chat Window -->
+  <div class="chat-container" id="chatContainer">
+    <div class="chat-header">
+      <span>Chat with MCP</span>
+      <button class="close-btn" onclick="toggleChat()">×</button>
+    </div>
     <div id="chat"></div>
     <form class="input-area" onsubmit="send(); return false;">
       <input id="input" autocomplete="off" placeholder="Type your message..." />
-      <button type="submit">Send</button>
+      <button type="submit" class="send-btn">Send</button>
     </form>
   </div>
+
   <script src="chat.js"></script>
+  <script>
+    function toggleChat() {
+      const chatContainer = document.getElementById('chatContainer');
+      const chatIcon = document.querySelector('.chat-icon');
+      const chatIconSvg = document.querySelector('.chat-icon-svg');
+      const closeIcon = document.querySelector('.close-icon');
+      
+      if (chatContainer.classList.contains('open')) {
+        chatContainer.classList.remove('open');
+        chatIconSvg.style.display = 'block';
+        closeIcon.style.display = 'none';
+      } else {
+        chatContainer.classList.add('open');
+        chatIconSvg.style.display = 'none';
+        closeIcon.style.display = 'block';
+        document.getElementById('input').focus();
+      }
+    }
+    
+    // Close chat when clicking outside
+    document.addEventListener('click', function(event) {
+      const chatContainer = document.getElementById('chatContainer');
+      const chatIcon = document.querySelector('.chat-icon');
+      
+      if (!chatContainer.contains(event.target) && 
+          !chatIcon.contains(event.target) && 
+          chatContainer.classList.contains('open')) {
+        toggleChat();
+      }
+    });
+  </script>
 </body>
 </html>
