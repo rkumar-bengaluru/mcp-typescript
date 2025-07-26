@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MCP Web Chat</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #ece9f7 0%, #cfd9df 100%);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chat-container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      width: 370px;
+      max-width: 95vw;
+      display: flex;
+      flex-direction: column;
+      height: 540px;
+      overflow: hidden;
+    }
+    #chat {
+      flex: 1;
+      padding: 20px 16px 10px 16px;
+      overflow-y: auto;
+      background: #f7f8fa;
+      font-size: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+    }
+    .user {
+      align-self: flex-end;
+      background: #4f8cff;
+      color: #fff;
+      border-radius: 16px 16px 4px 16px;
+      padding: 8px 14px;
+      margin-bottom: 2px;
+      word-break: break-word;
+      box-shadow: 0 2px 8px rgba(79,140,255,0.08);
+    }
+    .bot {
+      align-self: flex-start;
+      background: #e5e9f2;
+      color: #222;
+      border-radius: 16px 16px 16px 4px;
+      padding: 8px 14px;
+      margin-bottom: 2px;
+      word-break: break-word;
+      box-shadow: 0 2px 8px rgba(79,140,255,0.04);
+    }
+    .input-area {
+      display: flex;
+      padding: 14px 16px;
+      background: #f0f2f7;
+      border-top: 1px solid #e0e4ea;
+      gap: 8px;
+    }
+    #input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #cfd9df;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    #input:focus {
+      border: 1.5px solid #4f8cff;
+    }
+    button {
+      background: #4f8cff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0 18px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-shadow: 0 2px 8px rgba(79,140,255,0.08);
+    }
+    button:hover {
+      background: #2563d8;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div id="chat"></div>
+    <form class="input-area" onsubmit="send(); return false;">
+      <input id="input" autocomplete="off" placeholder="Type your message..." />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <script src="chat.js"></script>
+</body>
+</html>

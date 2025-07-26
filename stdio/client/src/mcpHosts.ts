@@ -145,11 +145,13 @@ export class MCPHost {
                     });
                     const secondResponse = secondCompletion.choices[0].message.content;
                     console.log(`Agent Reponse >> ${JSON.stringify(secondResponse)}`)
+                    return secondResponse
                 }
                 // In a real app, you would call your actual function here:
                 // const result = await scheduleMeeting(functionCall.args);
             } else {
                 console.log(textResponse);
+                return textResponse; // Return the text response if no function calls
             }
 
 
