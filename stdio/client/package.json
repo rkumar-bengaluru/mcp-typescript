@@ -11,6 +11,7 @@
     "author": "rupak",
     "license": "ISC",
     "devDependencies": {
+        "@types/express": "^5.0.3",
         "@types/node": "^22.14.0",
         "typescript": "^5.8.3"
     },
@@ -20,6 +21,7 @@
         "@types/axios": "^0.9.36",
         "axios": "^1.11.0",
         "dotenv": "^16.4.7",
+        "express": "^5.1.0",
         "groq-sdk": "^0.27.0"
     }
 }
