@@ -5,6 +5,7 @@ import dotenv from "dotenv"
 import configs from "../server-config.json" with { type: "json" }
 import Groq from "groq-sdk";
 import { MCPClient } from "./mcpClient.js"
+import { Queue } from "./queue.js"
 import winston from 'winston';
 
 
@@ -27,6 +28,7 @@ export class MCPHost {
     private toolsMap: { [name: string]: MCPClient } = {}
     private arrayOfTools: any[] = [];
     private ai: Groq
+    private queue: Queue<string> = new Queue<string>()
     private servers: McpServers = configs;
     private model: string = "llama-3.3-70b-versatile"
     private logger = winston.createLogger({
@@ -80,6 +82,17 @@ export class MCPHost {
                     ...map
                 }
                 this.logger.info(`Connected to server ${server.name} with tools: ${tools.map(({ name }) => name)} and description ${tools.map(({ description }) => description)}`)
+                for (const key in this.toolsMap) {
+                    this.logger.info(`tool name: ${key}`)
+                }
+
+                this.queue.enqueue("Hello")
+                this.queue.enqueue("World")
+                console.log(`queue ${JSON.stringify(this.queue.peek())}`)
+                console.log(`queue ${JSON.stringify(this.queue.dequeue())}`)
+                console.log(`queue ${JSON.stringify(this.queue.peek())}`)
+                console.log(`queue ${JSON.stringify(this.queue.dequeue())}`)
+                console.log(`queue ${JSON.stringify(this.queue.peek())}`)
             }
 
         } catch (e) {
@@ -133,21 +146,37 @@ export class MCPHost {
 
             // Check for function calls in the response
             if (functionCalls && functionCalls.length > 0) {
+                let index = 0
                 console.log(`functionCalls ${JSON.stringify(functionCalls)}`)
                 for (const fc of functionCalls) {
-                    console.log(`Function to call: ${fc.function.name}`);
+                    console.log(`Function to call: ${fc.function.name} at index ${index}`);
                     // get mcp client for this tool
                     const mcpClient = this.toolsMap[fc.function.name]
                     const toolCall = fc; // Assuming one tool call for simplicity
                     const functionName = toolCall.function.name;
                     const functionArgs = JSON.parse(toolCall.function.arguments);
+                    if (index > 0) {
+                        console.log(`functionArgs ${JSON.stringify(functionArgs)}`)
+                        if (functionArgs['content']) {
+                            const content = this.queue.dequeue()
+                            console.log(`responses ${content}`)
+                            functionArgs['content'] = content
+                            console.log(`functionArgs ${JSON.stringify(functionArgs)}`)
+                        }
+
+                    }
                     // make the actual call
                     const result = await mcpClient.callTool(functionName,
                         functionArgs)
                     let parsedContent = undefined;
+                    this.logger.info(`function call successful`)
                     if (Array.isArray(result.content)) {
                         for (const c of result.content) {
+                            this.logger.info(`retrieving content`)
                             parsedContent = JSON.parse(c.text)
+                            this.logger.info(`parsedContent ${JSON.stringify(parsedContent)}`)
+                            this.queue.enqueue(JSON.stringify(parsedContent))
+                            console.log(`added function call response to queue`)
                         }
                     }
                     // Second request: Send the tool output back to the model
@@ -163,12 +192,16 @@ export class MCPHost {
                         max_tokens: 1000,
                     });
                     const secondResponse = secondCompletion.choices[0].message.content;
+                    index++
                     console.log(`Agent Reponse >> ${JSON.stringify(secondResponse)}`)
+                    return secondResponse
                 }
+                
                 // In a real app, you would call your actual function here:
                 // const result = await scheduleMeeting(functionCall.args);
             } else {
                 console.log(`Agent Reponse >> ${JSON.stringify(response.choices[0].message)}`)
+                return textResponse;
             }
 
 
