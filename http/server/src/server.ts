@@ -17,14 +17,17 @@ export class MCPServer {
 
     private toolInterval: NodeJS.Timeout | undefined
     private patientInfoToolName = "get_patient_info"
-    private multiGreetToolName = "multi-great"
+    private gdoStatusToolName = "get_gdo_status"
     private emailToolName = "send_email"
     private emailToolDescription = "Send an email to the user."
     private patientInfoToolDescription = `
         Get the patient information based on the patient barcode which is a 11 digit number.
         Parameters:
-        - 'barcode': barcode of the patient.
-        `
+        - 'barcode': barcode of the patient. `
+    private gdoStatusToolDescription = `
+        Get the GDO Status based on the country code.
+        Parameters:
+        - 'country': country code for which the GDO status is to be fetched. `
 
 
 
@@ -129,18 +132,18 @@ export class MCPServer {
 
 
             // tool that sends multiple greetings with notifications
-            const multiGreetTool = {
-                name: this.multiGreetToolName,
-                description: "Greet the user multiple times with delay in between.",
+            const gdoStatusTool = {
+                name: this.gdoStatusToolName,
+                description: this.gdoStatusToolDescription,
                 inputSchema: {
                     type: "object",
                     properties: {
-                        name: {
+                        country: {
                             type: "string",
-                            description: "name to greet"
+                            description: "country code for which the GDO status is to be fetched"
                         },
                     },
-                    required: ["name"]
+                    required: ["country"]
                 }
             }
 
@@ -170,7 +173,7 @@ export class MCPServer {
 
 
             return {
-                tools: [patientInfoTool, emailTool]
+                tools: [gdoStatusTool, patientInfoTool, emailTool]
             }
         })
 
@@ -239,35 +242,41 @@ export class MCPServer {
                 }
             }
 
-            if (toolName === this.multiGreetToolName) {
-                const { name } = args
-                const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+            if (toolName === this.gdoStatusToolName) {
 
-                let notification: LoggingMessageNotification = {
-                    method: "notifications/message",
-                    params: { level: "info", data: `First greet to ${name}` }
+                const { country } = args
+
+                console.log(`from server country ${country}`)
+                if (typeof (country) !== "string") {
+                    throw new Error(`Bad country format ` + country)
                 }
 
-                await sendNotification(notification)
+                try {
+                    let data = await this.fetchGDOStatus(country)
+                    console.log('Data received (Axios):', data)
+                    return {
+                        content: [{
+                            type: "text",
+                            text: JSON.stringify(data)
+                        }]
+                    }
 
-                await sleep(1000)
-
-                notification.params.data = `Second greet to ${name}`
-                await sendNotification(notification);
-
-                await sleep(1000)
-                let response = {
-                    "result": "Hope you enjoy your day!"
-                }
-
-                return {
-                    content: [{
-                        type: "text",
-                        text: JSON.stringify(response)
-                    }]
+                } catch (err) {
+                    let errorMessage = "Error occured while creating the project."
+                    if (err instanceof Error) {
+                        errorMessage += err.message
+                    }
+                    return {
+                        content: [{
+                            type: "text",
+                            text: errorMessage
+                        }]
+                    }
                 }
             }
 
+
+            
             if (toolName === this.emailToolName) {
                 const { emailId, subject, content } = args
 
@@ -279,7 +288,7 @@ export class MCPServer {
                 // Simulate sending an email
                 console.log(`Sending email to ${emailId}...`)
                 sendEmail({
-                    to: 'rupak.kumar.ambasta@gmail.com',
+                    to: emailId as string,
                     subject: subject as string,
                     text: 'Plain-text body',
                     html: htmlContent,
@@ -311,6 +320,29 @@ export class MCPServer {
 
             throw new Error("Tool not found")
         })
+    }
+
+    private async fetchGDOStatus<T>(country: string): Promise<T> {
+        try {
+            const apiUrlAxios = process.env.FS61ENGINE_API_ENDPOINT as string
+            const authTokenAxios = process.env.FS61ENGINE_API_KEY as string
+            const url = apiUrlAxios + "?country=" + country
+            console.log(`apiUrlAxios ${url}`)
+            const response = await axios.get<T>(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${authTokenAxios}`
+                },
+            });
+          return response.data;
+        } catch (error) {
+          if (axios.isAxiosError(error)) {
+            console.error("Axios error fetching data:", error);
+          } else {
+            console.error("Unexpected error fetching data:", error);
+          }
+          throw error;
+        }
     }
 
     private async fetchPatientInfo<T>(barcode: string): Promise<T> {
