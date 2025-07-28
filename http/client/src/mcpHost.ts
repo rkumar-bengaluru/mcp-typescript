@@ -86,13 +86,7 @@ export class MCPHost {
                     this.logger.info(`tool name: ${key}`)
                 }
 
-                this.queue.enqueue("Hello")
-                this.queue.enqueue("World")
-                console.log(`queue ${JSON.stringify(this.queue.peek())}`)
-                console.log(`queue ${JSON.stringify(this.queue.dequeue())}`)
-                console.log(`queue ${JSON.stringify(this.queue.peek())}`)
-                console.log(`queue ${JSON.stringify(this.queue.dequeue())}`)
-                console.log(`queue ${JSON.stringify(this.queue.peek())}`)
+               
             }
 
         } catch (e) {
@@ -145,6 +139,7 @@ export class MCPHost {
             }
 
             // Check for function calls in the response
+            let finalResponse = "";
             if (functionCalls && functionCalls.length > 0) {
                 let index = 0
                 console.log(`functionCalls ${JSON.stringify(functionCalls)}`)
@@ -194,8 +189,10 @@ export class MCPHost {
                     const secondResponse = secondCompletion.choices[0].message.content;
                     index++
                     console.log(`Agent Reponse >> ${JSON.stringify(secondResponse)}`)
-                    return secondResponse
+                    finalResponse += secondResponse ?? ""
+                    
                 }
+                return finalResponse
                 
                 // In a real app, you would call your actual function here:
                 // const result = await scheduleMeeting(functionCall.args);
