@@ -2,19 +2,43 @@
 import {MCPHost} from "./mcpHost.js"
 import dotenv from 'dotenv';
 
+import express from "express";
+import path from "path";
+const app = express();
+app.use(express.json());
 
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 dotenv.config()
 
-async function main() {
-    const host = new MCPHost("mcp-host")
-    await host.connectToServers()
+const host = new MCPHost("mcp-host");
+await host.connectToServers();
 
+app.post("/chat", async (req, res) => {
+    const { message } = req.body;
     try {
-        await host.chatLoop()
-    } finally {
-        await host.cleanup()
-        process.exit(0)
+        const response = await host.processQuery(message);
+        res.json({ response });
+    } catch (e) {
+        res.status(500).json({ error: (e as Error).message });
     }
-}
+});
 
-main()
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+// Serve index.html for the root route
+app.get('/', (req, res) => {
+    console.log("Serving index.html");
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+
+app.listen(3001, () => {
+    console.log('current directory:', __dirname);
+    console.log("Web chat server running on http://localhost:3001");
+});
+

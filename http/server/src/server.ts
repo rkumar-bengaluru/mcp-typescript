@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { Request, Response } from "express"
 import { sendEmail } from "./sendEmail.js";
 
+import axios from 'axios';
 const SESSION_ID_HEADER_NAME = "mcp-session-id"
 const JSON_RPC = "2.0"
 
@@ -15,10 +16,15 @@ export class MCPServer {
     transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
 
     private toolInterval: NodeJS.Timeout | undefined
-    private singleGreetToolName = "single-greet"
+    private patientInfoToolName = "get_patient_info"
     private multiGreetToolName = "multi-great"
     private emailToolName = "send_email"
     private emailToolDescription = "Send an email to the user."
+    private patientInfoToolDescription = `
+        Get the patient information based on the patient barcode which is a 11 digit number.
+        Parameters:
+        - 'barcode': barcode of the patient.
+        `
 
 
 
@@ -103,23 +109,24 @@ export class MCPServer {
 
         // Define available tools
         const setToolSchema = () => this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-            this.singleGreetToolName = `single-greeting-${randomUUID()}`
+            this.patientInfoToolName = `get_patient_info`
 
             // tool that returns a single greeting
-            const singleGreetTool = {
-                name: this.singleGreetToolName,
-                description: "Greet the user once.",
+            const patientInfoTool = {
+                name: this.patientInfoToolName,
+                description: this.patientInfoToolDescription,
                 inputSchema: {
                     type: "object",
                     properties: {
-                        name: {
+                        barcode: {
                             type: "string",
-                            description: "name to greet"
+                            description: "barcode of the patient",
                         },
                     },
-                    required: ["name"]
-                }
+                    required: ["barcode"]
+                },
             }
+
 
             // tool that sends multiple greetings with notifications
             const multiGreetTool = {
@@ -163,7 +170,7 @@ export class MCPServer {
 
 
             return {
-                tools: [singleGreetTool, multiGreetTool, emailTool]
+                tools: [patientInfoTool, emailTool]
             }
         })
 
@@ -199,23 +206,36 @@ export class MCPServer {
                 throw new Error("tool name undefined")
             }
 
-            if (toolName === this.singleGreetToolName) {
+            if (toolName === this.patientInfoToolName) {
 
-                const { name } = args
+                const { barcode } = args
 
-                if (!name) {
-                    throw new Error("Name to greet undefined.")
-                }
-                 let response = {
-                    "result": `Hey ${name}! Welcome to itsuki's world!`
+                console.log(`from serverbarcode ${barcode}`)
+                if (typeof (barcode) !== "string") {
+                    throw new Error(`Bad barcode format ` + barcode)
                 }
 
+                try {
+                    let data = await this.fetchPatientInfo(barcode)
+                    console.log('Data received (Axios):', data)
+                    return {
+                        content: [{
+                            type: "text",
+                            text: JSON.stringify(data)
+                        }]
+                    }
 
-                return {
-                    content: [{
-                        type: "text",
-                        text: JSON.stringify(response)
-                    }]
+                } catch (err) {
+                    let errorMessage = "Error occured while creating the project."
+                    if (err instanceof Error) {
+                        errorMessage += err.message
+                    }
+                    return {
+                        content: [{
+                            type: "text",
+                            text: errorMessage
+                        }]
+                    }
                 }
             }
 
@@ -293,6 +313,29 @@ export class MCPServer {
         })
     }
 
+    private async fetchPatientInfo<T>(barcode: string): Promise<T> {
+        try {
+            const apiUrlAxios = process.env.AROGYA_END_POINT as string
+            const authTokenAxios = process.env.AROGYA_API_KEY as string
+            const url = apiUrlAxios + barcode
+            console.log(`apiUrlAxios ${url}`)
+            const response = await axios.get<T>(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${authTokenAxios}`
+                },
+            });
+          return response.data;
+        } catch (error) {
+          if (axios.isAxiosError(error)) {
+            console.error("Axios error fetching data:", error);
+          } else {
+            console.error("Unexpected error fetching data:", error);
+          }
+          throw error;
+        }
+    }
+    
 
     // send message streaming message every second
     // cannot use server.sendLoggingMessage because we have can have multiple transports
